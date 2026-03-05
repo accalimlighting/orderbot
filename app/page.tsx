@@ -164,6 +164,9 @@ function ResultRow({ row, index }: { row: ComparisonRow; index: number }) {
       >
         <div className="flex items-center gap-3">
           <span className={`text-lg font-bold ${s.iconColor} w-6 text-center`}>{s.icon}</span>
+          {item?.lineNumber != null && (
+            <span className="text-xs font-mono text-gray-400 w-6 text-center flex-shrink-0">#{item.lineNumber}</span>
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-mono text-sm font-semibold text-gray-800">
@@ -189,6 +192,7 @@ function ResultRow({ row, index }: { row: ComparisonRow; index: number }) {
               <p className="font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Customer PO</p>
               {row.customerItem ? (
                 <div className="space-y-1 text-gray-700">
+                  {row.customerItem.lineNumber != null && <p><span className="text-gray-400">Line #:</span> {row.customerItem.lineNumber}</p>}
                   <p><span className="text-gray-400">Part:</span> {row.customerItem.partNumber}</p>
                   <p><span className="text-gray-400">Desc:</span> {row.customerItem.description}</p>
                   <p><span className="text-gray-400">Qty:</span> {row.customerItem.quantity} {row.customerItem.uom || ''}</p>
@@ -203,6 +207,7 @@ function ResultRow({ row, index }: { row: ComparisonRow; index: number }) {
               <p className="font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Entered Order</p>
               {row.entryItem ? (
                 <div className="space-y-1 text-gray-700">
+                  {row.entryItem.lineNumber != null && <p><span className="text-gray-400">Line #:</span> {row.entryItem.lineNumber}</p>}
                   <p><span className="text-gray-400">Part:</span> {row.entryItem.partNumber}</p>
                   <p><span className="text-gray-400">Desc:</span> {row.entryItem.description}</p>
                   <p><span className="text-gray-400">Qty:</span> {row.entryItem.quantity} {row.entryItem.uom || ''}</p>
@@ -257,16 +262,16 @@ function exportCSV(result: ComparisonResult) {
   // Line items
   rows.push(['LINE ITEMS']);
   rows.push([
-    'Status', 'PO Part #', 'PO Description', 'PO Qty', 'PO Unit Price', 'PO Total',
-    'Entry Part #', 'Entry Description', 'Entry Qty', 'Entry Unit Price', 'Entry Total', 'Issues',
+    'Status', 'PO Line #', 'PO Part #', 'PO Description', 'PO Qty', 'PO Unit Price', 'PO Total',
+    'Entry Line #', 'Entry Part #', 'Entry Description', 'Entry Qty', 'Entry Unit Price', 'Entry Total', 'Issues',
   ]);
   result.lineItems.forEach((row) => {
     const c = row.customerItem;
     const e = row.entryItem;
     rows.push([
       row.status,
-      c?.partNumber || '', c?.description || '', String(c?.quantity || ''), String(c?.unitPrice || ''), String(c?.total || ''),
-      e?.partNumber || '', e?.description || '', String(e?.quantity || ''), String(e?.unitPrice || ''), String(e?.total || ''),
+      String(c?.lineNumber ?? ''), c?.partNumber || '', c?.description || '', String(c?.quantity || ''), String(c?.unitPrice || ''), String(c?.total || ''),
+      String(e?.lineNumber ?? ''), e?.partNumber || '', e?.description || '', String(e?.quantity || ''), String(e?.unitPrice || ''), String(e?.total || ''),
       row.issues.join('; '),
     ]);
   });
@@ -340,14 +345,14 @@ ${result.headerComparison.length > 0 ? `<h2>Order Header</h2><table>
 ${result.headerComparison.map((h) => `<tr><td>${h.field}</td><td>${h.customerValue}</td><td>${h.entryValue}</td><td style="color:${h.match ? '#059669' : '#dc2626'}">${h.match ? '✓' : '✕'}</td></tr>`).join('')}
 </table>` : ''}
 <h2>Line Items</h2><table>
-<tr><th>Status</th><th>PO Part #</th><th>PO Qty</th><th>PO Price</th><th>Entry Part #</th><th>Entry Qty</th><th>Entry Price</th><th>Issues</th></tr>
+<tr><th>Status</th><th>PO Line #</th><th>PO Part #</th><th>PO Qty</th><th>PO Price</th><th>Entry Line #</th><th>Entry Part #</th><th>Entry Qty</th><th>Entry Price</th><th>Issues</th></tr>
 ${result.lineItems.map((row) => {
     const c = row.customerItem;
     const e = row.entryItem;
     return `<tr>
       <td><span class="status-dot" style="background:${rowStatusColor[row.status] || '#d97706'}"></span>${row.status.replace(/_/g, ' ')}</td>
-      <td>${c?.partNumber || '—'}</td><td>${c?.quantity || '—'}</td><td>${c?.unitPrice || '—'}</td>
-      <td>${e?.partNumber || '—'}</td><td>${e?.quantity || '—'}</td><td>${e?.unitPrice || '—'}</td>
+      <td>${c?.lineNumber ?? '—'}</td><td>${c?.partNumber || '—'}</td><td>${c?.quantity || '—'}</td><td>${c?.unitPrice || '—'}</td>
+      <td>${e?.lineNumber ?? '—'}</td><td>${e?.partNumber || '—'}</td><td>${e?.quantity || '—'}</td><td>${e?.unitPrice || '—'}</td>
       <td>${row.issues.join('; ') || '—'}</td>
     </tr>`;
   }).join('')}
