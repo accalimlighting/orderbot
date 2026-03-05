@@ -468,7 +468,10 @@ export default function Home() {
                 Compare Orders
               </h2>
               <p className="text-sm text-gray-500 max-w-md mx-auto">
-                Upload the customer&apos;s purchase order and your entered order. AI will check every line item for discrepancies.
+                Upload the customer&apos;s purchase order and your entered order. Claude will check every line item for discrepancies. Export as PDF or CSV.
+              </p>
+              <p className="text-xs text-gray-400 mt-2 max-w-md mx-auto">
+                Note: the app does not retain or save information once you leave the screen.
               </p>
             </div>
 
