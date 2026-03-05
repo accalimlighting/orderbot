@@ -311,7 +311,7 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
-                OrderCheck
+                OrderBot
               </h1>
             </div>
           </div>

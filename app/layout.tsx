@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'OrderCheck — Order Comparison Tool',
+  title: 'OrderBot — Order Comparison Tool',
   description: 'Compare customer PO against entered order to catch discrepancies',
 };
 
