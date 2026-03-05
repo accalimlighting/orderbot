@@ -574,20 +574,19 @@ export default function Home() {
             {result.headerComparison.length > 0 && (
               <div className="animate-in animate-in-delay-1 bg-white rounded-xl border border-gray-200 p-6">
                 <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Order Header</h4>
-                <div className="divide-y divide-gray-100">
+                <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-x-4 text-sm">
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-2"></span>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-2">Customer PO</span>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-2">Entered Order</span>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-2">Match</span>
                   {result.headerComparison.map((h, i) => (
-                    <div key={i} className="flex items-center py-2 text-sm gap-3">
-                      <span className={`w-5 text-center ${h.match ? 'text-emerald-500' : 'text-red-500'}`}>
+                    <div key={i} className="contents">
+                      <span className="text-gray-500 py-2 border-t border-gray-100">{h.field}</span>
+                      <span className="text-gray-700 font-mono text-xs py-2 border-t border-gray-100">{h.customerValue}</span>
+                      <span className={`font-mono text-xs py-2 border-t border-gray-100 ${h.match ? 'text-gray-700' : 'text-red-600'}`}>{h.entryValue}</span>
+                      <span className={`py-2 border-t border-gray-100 text-center ${h.match ? 'text-emerald-500' : 'text-red-500'}`}>
                         {h.match ? '✓' : '✕'}
                       </span>
-                      <span className="text-gray-500 w-32 flex-shrink-0">{h.field}</span>
-                      <span className="text-gray-700 flex-1 font-mono text-xs">{h.customerValue}</span>
-                      {!h.match && (
-                        <>
-                          <span className="text-gray-300">→</span>
-                          <span className="text-red-600 flex-1 font-mono text-xs">{h.entryValue}</span>
-                        </>
-                      )}
                     </div>
                   ))}
                 </div>
