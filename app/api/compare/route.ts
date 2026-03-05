@@ -75,7 +75,8 @@ For prices, compare the actual numbers — $10.00 and $10 are the same.
 For part numbers, be exact — even a single character difference is a mismatch.
 For quantities, exact match required.
 Compare any header fields you can find: PO number, dates, ship-to, bill-to, payment terms, etc.
-IMPORTANT: Order dates frequently differ between the customer PO and the entered order (e.g. the PO date vs. the entry date). Do NOT flag date differences as mismatches — always mark date fields as "match": true in the headerComparison regardless of whether they differ.`;
+IMPORTANT: Order dates frequently differ between the customer PO and the entered order (e.g. the PO date vs. the entry date). Do NOT flag date differences as mismatches — always mark date fields as "match": true in the headerComparison regardless of whether they differ.
+IMPORTANT: Payment terms (e.g. "Net 30", "Freight Prepaid & Add", etc.) frequently differ between the customer PO and the entered order. Do NOT flag terms differences as mismatches — always mark terms fields as "match": true in the headerComparison regardless of whether they differ.`;
 
 export async function POST(request: NextRequest) {
   try {
