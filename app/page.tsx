@@ -394,7 +394,7 @@ export default function Home() {
         toBase64(entryFile.file),
       ]);
 
-      setProgress('Claude is running...');
+      setProgress('OrderBot is running...');
 
       const res = await fetch('/api/compare', {
         method: 'POST',
