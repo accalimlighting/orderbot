@@ -518,7 +518,7 @@ export default function Home() {
             </button>
 
             <p className="text-center text-xs text-gray-400 mt-3">
-              Powered by Claude AI — checks part numbers, quantities, pricing, and more
+              Powered by Claude - checks part numbers, quantities, pricing, and more - be sure to verify
             </p>
           </div>
         ) : (
