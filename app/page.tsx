@@ -40,6 +40,7 @@ type ComparisonResult = {
     customerValue: string;
     entryValue: string;
     match: boolean;
+    matchRequired?: boolean;
   }[];
   lineItems: ComparisonRow[];
   recommendations: string[];
@@ -342,8 +343,13 @@ function exportPDF(result: ComparisonResult) {
 </div>
 ${result.headerComparison.length > 0 ? `<h2>Order Header</h2><table>
 <tr><th>Field</th><th>Customer PO</th><th>Entered Order</th><th>Match</th></tr>
-${result.headerComparison.map((h) => `<tr><td>${h.field}</td><td>${h.customerValue}</td><td>${h.entryValue}</td><td style="color:${h.match ? '#059669' : '#dc2626'}">${h.match ? '✓' : '✕'}</td></tr>`).join('')}
-</table>` : ''}
+${result.headerComparison.map((h) => {
+    const req = h.matchRequired !== false;
+    const symbol = h.match ? '✓' : req ? '✕' : 'NR';
+    const color = h.match ? '#059669' : req ? '#dc2626' : '#059669';
+    return `<tr><td>${h.field}</td><td>${h.customerValue}</td><td>${h.entryValue}</td><td style="color:${color};font-weight:600">${symbol}</td></tr>`;
+  }).join('')}
+</table>${result.headerComparison.some((h) => h.matchRequired === false) ? '<div style="font-size:10px;color:#9ca3af;margin-top:-12px;margin-bottom:16px">NR = Not required to match</div>' : ''}` : ''}
 <h2>Line Items</h2><table>
 <tr><th>Status</th><th>PO Line #</th><th>PO Part #</th><th>PO Qty</th><th>PO Price</th><th>Entry Line #</th><th>Entry Part #</th><th>Entry Qty</th><th>Entry Price</th><th>Issues</th></tr>
 ${result.lineItems.map((row) => {
@@ -592,17 +598,25 @@ export default function Home() {
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-2">Customer PO</span>
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-2">Entered Order</span>
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-2">Match</span>
-                  {result.headerComparison.map((h, i) => (
-                    <div key={i} className="contents">
-                      <span className="text-gray-500 py-2 border-t border-gray-100">{h.field}</span>
-                      <span className="text-gray-700 font-mono text-xs py-2 border-t border-gray-100">{h.customerValue}</span>
-                      <span className={`font-mono text-xs py-2 border-t border-gray-100 ${h.match ? 'text-gray-700' : 'text-red-600'}`}>{h.entryValue}</span>
-                      <span className={`py-2 border-t border-gray-100 text-center ${h.match ? 'text-emerald-500' : 'text-red-500'}`}>
-                        {h.match ? '✓' : '✕'}
-                      </span>
-                    </div>
-                  ))}
+                  {result.headerComparison.map((h, i) => {
+                    const required = h.matchRequired !== false;
+                    return (
+                      <div key={i} className="contents">
+                        <span className="text-gray-500 py-2 border-t border-gray-100">{h.field}</span>
+                        <span className="text-gray-700 font-mono text-xs py-2 border-t border-gray-100">{h.customerValue}</span>
+                        <span className={`font-mono text-xs py-2 border-t border-gray-100 ${h.match ? 'text-gray-700' : required ? 'text-red-600' : 'text-gray-700'}`}>{h.entryValue}</span>
+                        <span className={`py-2 border-t border-gray-100 text-center font-semibold ${
+                          h.match ? 'text-emerald-500' : required ? 'text-red-500' : 'text-emerald-500'
+                        }`}>
+                          {h.match ? '✓' : required ? '✕' : 'NR'}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
+                {result.headerComparison.some((h) => h.matchRequired === false) && (
+                  <p className="text-xs text-gray-400 mt-3">NR = Not required to match</p>
+                )}
               </div>
             )}
 

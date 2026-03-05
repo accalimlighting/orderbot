@@ -27,7 +27,8 @@ RESPOND ONLY WITH VALID JSON (no markdown, no backticks, no explanation). Use th
       "field": "<field name like PO Number, Date, Ship To, Bill To, etc>",
       "customerValue": "<value from customer PO>",
       "entryValue": "<value from entered order>",
-      "match": <true/false>
+      "match": <true/false>,
+      "matchRequired": <true/false>
     }
   ],
   "lineItems": [
@@ -76,8 +77,9 @@ For part numbers, be exact — even a single character difference is a mismatch.
 IMPORTANT: For the PO Number header field, the entry system (Acumatica) does not allow dashes or spaces. When comparing PO Numbers, strip all dashes and spaces from both values before comparing. If the remaining alphanumeric characters match in the same order, mark as "match": true. For example, "3009421-00" and "300942100" should be a match. Also ignore case differences in PO Numbers.
 For quantities, exact match required.
 Compare any header fields you can find: PO number, dates, ship-to, bill-to, payment terms, etc.
-IMPORTANT: Order dates frequently differ between the customer PO and the entered order (e.g. the PO date vs. the entry date). Do NOT flag date differences as mismatches — always mark date fields as "match": true in the headerComparison regardless of whether they differ.
-IMPORTANT: Payment terms (e.g. "Net 30", "Freight Prepaid & Add", etc.) frequently differ between the customer PO and the entered order. Do NOT flag terms differences as mismatches — always mark terms fields as "match": true in the headerComparison regardless of whether they differ.`;
+IMPORTANT: Order dates frequently differ between the customer PO and the entered order (e.g. the PO date vs. the entry date). For date fields, set "matchRequired": false and compare the actual values — set "match": true if they are the same, "match": false if they differ. Do NOT count date mismatches toward errors or affect overallStatus.
+IMPORTANT: Payment terms (e.g. "Net 30", "Freight Prepaid & Add", etc.) frequently differ between the customer PO and the entered order. For terms fields, set "matchRequired": false and compare the actual values — set "match": true if they are the same, "match": false if they differ. Do NOT count terms mismatches toward errors or affect overallStatus.
+For all other header fields (PO Number, Ship To, Bill To, Contact, Total Amount, etc.), set "matchRequired": true.`;
 
 export async function POST(request: NextRequest) {
   try {
