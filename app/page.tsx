@@ -230,6 +230,136 @@ function ResultRow({ row, index }: { row: ComparisonRow; index: number }) {
   );
 }
 
+function exportCSV(result: ComparisonResult) {
+  const rows: string[][] = [];
+
+  // Header info
+  rows.push(['OrderBot Comparison Report']);
+  rows.push(['Overall Status', result.overallStatus.toUpperCase()]);
+  rows.push(['Matches', String(result.summary.matches)]);
+  rows.push(['Warnings', String(result.summary.warnings)]);
+  rows.push(['Errors', String(result.summary.errors)]);
+  rows.push(['Missing', String(result.summary.missing)]);
+  rows.push(['Extras', String(result.summary.extras)]);
+  rows.push([]);
+
+  // Header comparison
+  if (result.headerComparison.length > 0) {
+    rows.push(['ORDER HEADER']);
+    rows.push(['Field', 'Customer Value', 'Entry Value', 'Match']);
+    result.headerComparison.forEach((h) => {
+      rows.push([h.field, h.customerValue, h.entryValue, h.match ? 'Yes' : 'No']);
+    });
+    rows.push([]);
+  }
+
+  // Line items
+  rows.push(['LINE ITEMS']);
+  rows.push([
+    'Status', 'PO Part #', 'PO Description', 'PO Qty', 'PO Unit Price', 'PO Total',
+    'Entry Part #', 'Entry Description', 'Entry Qty', 'Entry Unit Price', 'Entry Total', 'Issues',
+  ]);
+  result.lineItems.forEach((row) => {
+    const c = row.customerItem;
+    const e = row.entryItem;
+    rows.push([
+      row.status,
+      c?.partNumber || '', c?.description || '', String(c?.quantity || ''), String(c?.unitPrice || ''), String(c?.total || ''),
+      e?.partNumber || '', e?.description || '', String(e?.quantity || ''), String(e?.unitPrice || ''), String(e?.total || ''),
+      row.issues.join('; '),
+    ]);
+  });
+  rows.push([]);
+
+  // Recommendations
+  if (result.recommendations.length > 0) {
+    rows.push(['RECOMMENDATIONS']);
+    result.recommendations.forEach((rec, i) => {
+      rows.push([`${i + 1}. ${rec}`]);
+    });
+  }
+
+  const csvContent = rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `orderbot-report-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportPDF(result: ComparisonResult) {
+  const statusLabel: Record<string, string> = {
+    pass: 'ALL CLEAR', review: 'NEEDS REVIEW', fail: 'DISCREPANCIES FOUND',
+  };
+  const statusColor: Record<string, string> = {
+    pass: '#059669', review: '#d97706', fail: '#dc2626',
+  };
+  const rowStatusColor: Record<string, string> = {
+    match: '#059669', mismatch: '#dc2626', warning: '#d97706',
+    missing_from_entry: '#dc2626', extra_in_entry: '#2563eb',
+  };
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>OrderBot Report</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 40px; color: #1f2937; font-size: 12px; }
+  h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #374151; margin: 24px 0 8px; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb; }
+  .badge { padding: 4px 12px; border-radius: 12px; font-weight: 700; font-size: 11px; color: white; }
+  .stats { display: flex; gap: 12px; margin-bottom: 20px; }
+  .stat { background: #f9fafb; border-radius: 8px; padding: 12px; text-align: center; flex: 1; }
+  .stat-val { font-size: 20px; font-weight: 700; }
+  .stat-label { font-size: 10px; color: #6b7280; margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  th { background: #f9fafb; text-align: left; padding: 6px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 6px 8px; border-bottom: 1px solid #f3f4f6; }
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .rec { padding: 4px 0; }
+  .rec-num { color: #9ca3af; margin-right: 4px; }
+  @media print { body { margin: 20px; } }
+</style></head><body>
+<div class="header">
+  <h1>OrderBot Report</h1>
+  <span class="badge" style="background:${statusColor[result.overallStatus]}">${statusLabel[result.overallStatus]}</span>
+</div>
+<div class="stats">
+  <div class="stat"><div class="stat-val" style="color:#059669">${result.summary.matches}</div><div class="stat-label">Matches</div></div>
+  <div class="stat"><div class="stat-val" style="color:#d97706">${result.summary.warnings}</div><div class="stat-label">Warnings</div></div>
+  <div class="stat"><div class="stat-val" style="color:#dc2626">${result.summary.errors}</div><div class="stat-label">Errors</div></div>
+  <div class="stat"><div class="stat-val" style="color:#dc2626">${result.summary.missing}</div><div class="stat-label">Missing</div></div>
+  <div class="stat"><div class="stat-val" style="color:#2563eb">${result.summary.extras}</div><div class="stat-label">Extras</div></div>
+</div>
+${result.headerComparison.length > 0 ? `<h2>Order Header</h2><table>
+<tr><th>Field</th><th>Customer PO</th><th>Entered Order</th><th>Match</th></tr>
+${result.headerComparison.map((h) => `<tr><td>${h.field}</td><td>${h.customerValue}</td><td>${h.entryValue}</td><td style="color:${h.match ? '#059669' : '#dc2626'}">${h.match ? '✓' : '✕'}</td></tr>`).join('')}
+</table>` : ''}
+<h2>Line Items</h2><table>
+<tr><th>Status</th><th>PO Part #</th><th>PO Qty</th><th>PO Price</th><th>Entry Part #</th><th>Entry Qty</th><th>Entry Price</th><th>Issues</th></tr>
+${result.lineItems.map((row) => {
+    const c = row.customerItem;
+    const e = row.entryItem;
+    return `<tr>
+      <td><span class="status-dot" style="background:${rowStatusColor[row.status] || '#d97706'}"></span>${row.status.replace(/_/g, ' ')}</td>
+      <td>${c?.partNumber || '—'}</td><td>${c?.quantity || '—'}</td><td>${c?.unitPrice || '—'}</td>
+      <td>${e?.partNumber || '—'}</td><td>${e?.quantity || '—'}</td><td>${e?.unitPrice || '—'}</td>
+      <td>${row.issues.join('; ') || '—'}</td>
+    </tr>`;
+  }).join('')}
+</table>
+${result.recommendations.length > 0 ? `<h2>Recommendations</h2>${result.recommendations.map((rec, i) => `<div class="rec"><span class="rec-num">${i + 1}.</span> ${rec}</div>`).join('')}` : ''}
+<div style="margin-top:24px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af">Generated by OrderBot &middot; ${new Date().toLocaleDateString()}</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 300);
+  }
+}
+
 export default function Home() {
   const [customerFile, setCustomerFile] = useState<FileState>({ file: null, name: '', status: 'empty' });
   const [entryFile, setEntryFile] = useState<FileState>({ file: null, name: '', status: 'empty' });
@@ -400,7 +530,25 @@ export default function Home() {
                 <h3 className="text-lg font-bold text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>
                   Comparison Results
                 </h3>
-                <StatusBadge status={result.overallStatus} />
+                <div className="flex items-center gap-3">
+                  <StatusBadge status={result.overallStatus} />
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => exportCSV(result)}
+                      className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                      title="Export as CSV"
+                    >
+                      CSV
+                    </button>
+                    <button
+                      onClick={() => exportPDF(result)}
+                      className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                      title="Export as PDF"
+                    >
+                      PDF
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
