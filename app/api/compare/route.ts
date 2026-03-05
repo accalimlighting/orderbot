@@ -97,44 +97,63 @@ export async function POST(request: NextRequest) {
 
     const client = new Anthropic({ apiKey });
 
-    const response = await client.messages.create({
-      model: 'claude-opus-4-20250514',
-      max_tokens: 8000,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: [
+    const MAX_RETRIES = 3;
+    let response;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        response = await client.messages.create({
+          model: 'claude-opus-4-20250514',
+          max_tokens: 8000,
+          system: SYSTEM_PROMPT,
+          messages: [
             {
-              type: 'document',
-              source: {
-                type: 'base64',
-                media_type: 'application/pdf',
-                data: customerPdf,
-              },
-              cache_control: { type: 'ephemeral' },
-            },
-            {
-              type: 'text',
-              text: 'Above is the CUSTOMER PURCHASE ORDER.',
-            },
-            {
-              type: 'document',
-              source: {
-                type: 'base64',
-                media_type: 'application/pdf',
-                data: entryPdf,
-              },
-              cache_control: { type: 'ephemeral' },
-            },
-            {
-              type: 'text',
-              text: 'Above is the ENTERED ORDER. Now compare both documents thoroughly and return the JSON comparison result.',
+              role: 'user',
+              content: [
+                {
+                  type: 'document',
+                  source: {
+                    type: 'base64',
+                    media_type: 'application/pdf',
+                    data: customerPdf,
+                  },
+                  cache_control: { type: 'ephemeral' },
+                },
+                {
+                  type: 'text',
+                  text: 'Above is the CUSTOMER PURCHASE ORDER.',
+                },
+                {
+                  type: 'document',
+                  source: {
+                    type: 'base64',
+                    media_type: 'application/pdf',
+                    data: entryPdf,
+                  },
+                  cache_control: { type: 'ephemeral' },
+                },
+                {
+                  type: 'text',
+                  text: 'Above is the ENTERED ORDER. Now compare both documents thoroughly and return the JSON comparison result.',
+                },
+              ],
             },
           ],
-        },
-      ],
-    });
+        });
+        break; // Success, exit retry loop
+      } catch (retryErr: any) {
+        const status = retryErr?.status || retryErr?.statusCode;
+        if (status === 529 && attempt < MAX_RETRIES - 1) {
+          // Overloaded — wait and retry
+          await new Promise((r) => setTimeout(r, (attempt + 1) * 3000));
+          continue;
+        }
+        throw retryErr;
+      }
+    }
+
+    if (!response) {
+      return NextResponse.json({ error: 'Claude is currently overloaded. Please try again in a moment.' }, { status: 529 });
+    }
 
     // Extract text from response
     const textBlock = response.content.find((b) => b.type === 'text');
