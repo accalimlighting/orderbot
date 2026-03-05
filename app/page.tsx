@@ -236,7 +236,8 @@ function exportCSV(result: ComparisonResult) {
   // Header info
   rows.push(['OrderBot Comparison Report']);
   rows.push(['Overall Status', result.overallStatus.toUpperCase()]);
-  rows.push(['Matches', String(result.summary.matches)]);
+  const headerMatchCount = result.headerComparison.filter((h) => h.match).length;
+  rows.push(['Matches', String(result.summary.matches + headerMatchCount)]);
   rows.push(['Warnings', String(result.summary.warnings)]);
   rows.push(['Errors', String(result.summary.errors)]);
   rows.push(['Missing', String(result.summary.missing)]);
@@ -301,6 +302,9 @@ function exportPDF(result: ComparisonResult) {
     missing_from_entry: '#dc2626', extra_in_entry: '#2563eb',
   };
 
+  const pdfHeaderMatches = result.headerComparison.filter((h) => h.match).length;
+  const pdfTotalMatches = result.summary.matches + pdfHeaderMatches;
+
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>OrderBot Report</title>
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 40px; color: #1f2937; font-size: 12px; }
@@ -325,7 +329,7 @@ function exportPDF(result: ComparisonResult) {
   <span class="badge" style="background:${statusColor[result.overallStatus]}">${statusLabel[result.overallStatus]}</span>
 </div>
 <div class="stats">
-  <div class="stat"><div class="stat-val" style="color:#059669">${result.summary.matches}</div><div class="stat-label">Matches</div></div>
+  <div class="stat"><div class="stat-val" style="color:#059669">${pdfTotalMatches}</div><div class="stat-label">Matches</div></div>
   <div class="stat"><div class="stat-val" style="color:#d97706">${result.summary.warnings}</div><div class="stat-label">Warnings</div></div>
   <div class="stat"><div class="stat-val" style="color:#dc2626">${result.summary.errors}</div><div class="stat-label">Errors</div></div>
   <div class="stat"><div class="stat-val" style="color:#dc2626">${result.summary.missing}</div><div class="stat-label">Missing</div></div>
@@ -555,13 +559,17 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
-                {[
-                  { label: 'Matches', val: result.summary.matches, color: 'text-emerald-600' },
-                  { label: 'Warnings', val: result.summary.warnings, color: 'text-amber-600' },
-                  { label: 'Errors', val: result.summary.errors, color: 'text-red-600' },
-                  { label: 'Missing', val: result.summary.missing, color: 'text-red-600' },
-                  { label: 'Extras', val: result.summary.extras, color: 'text-blue-600' },
-                ].map((stat) => (
+                {(() => {
+                  const headerMatches = result.headerComparison.filter((h) => h.match).length;
+                  const lineMatches = result.summary.matches;
+                  return [
+                    { label: 'Matches', val: headerMatches + lineMatches, color: 'text-emerald-600' },
+                    { label: 'Warnings', val: result.summary.warnings, color: 'text-amber-600' },
+                    { label: 'Errors', val: result.summary.errors, color: 'text-red-600' },
+                    { label: 'Missing', val: result.summary.missing, color: 'text-red-600' },
+                    { label: 'Extras', val: result.summary.extras, color: 'text-blue-600' },
+                  ];
+                })().map((stat) => (
                   <div key={stat.label} className="bg-gray-50 rounded-lg p-3">
                     <p className={`text-2xl font-bold ${stat.color}`}>{stat.val}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
