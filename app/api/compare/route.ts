@@ -73,6 +73,7 @@ STATUS RULES:
 Be thorough. Check EVERY line item. If you cannot read a value, note it as "UNREADABLE" and flag it as a warning.
 For prices, compare the actual numbers — $10.00 and $10 are the same.
 For part numbers, be exact — even a single character difference is a mismatch.
+IMPORTANT: For the PO Number header field, the entry system (Acumatica) does not allow dashes or spaces. When comparing PO Numbers, strip all dashes and spaces from both values before comparing. If the remaining alphanumeric characters match in the same order, mark as "match": true. For example, "3009421-00" and "300942100" should be a match. Also ignore case differences in PO Numbers.
 For quantities, exact match required.
 Compare any header fields you can find: PO number, dates, ship-to, bill-to, payment terms, etc.
 IMPORTANT: Order dates frequently differ between the customer PO and the entered order (e.g. the PO date vs. the entry date). Do NOT flag date differences as mismatches — always mark date fields as "match": true in the headerComparison regardless of whether they differ.
