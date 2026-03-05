@@ -394,7 +394,7 @@ export default function Home() {
         toBase64(entryFile.file),
       ]);
 
-      setProgress('AI is analyzing both orders...');
+      setProgress('Claude is running...');
 
       const res = await fetch('/api/compare', {
         method: 'POST',
