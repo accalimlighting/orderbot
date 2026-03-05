@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "app/api/compare/route.ts": {
+      "maxDuration": 120
+    }
+  }
+}
